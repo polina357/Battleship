@@ -1,0 +1,133 @@
+body {
+  font-family: 'Lato', sans-serif;
+  font-size: 22px;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+td {
+  user-select: none;
+  text-align: center;
+  vertical-align: middle;
+  border: 1px solid grey;
+  width: 33px;
+  height: 33px;
+}
+
+th {
+  user-select: none;
+  width: 33px;
+  height: 33px;
+}
+
+caption {
+  font-style: italic;
+  font-size: 18px;
+  padding: 7px;
+}
+
+.battlefield {
+  margin: auto;
+  width: max-content;
+}
+
+.boom {
+  background: url('media/explode.png');
+}
+
+.field {
+  display: inline-block;
+  margin: 30px;
+  margin-top: 15px;
+  margin-bottom: 10px;
+}
+
+.mode, .container_rooms {
+  margin-top: 10%;
+}
+
+.buttons {
+  width: max-content;
+  margin: auto;
+}
+
+button {
+  background-color: white;
+  border: 2px solid grey;
+  border-radius: 5px;
+  outline: none;
+  font-size: 20px;
+  padding: 15px;
+  cursor: pointer;
+  margin: 20px;
+  margin-top: 0;
+  width: 110px;
+}
+
+.material-icons.exit {
+  z-index: 1000;
+  position: absolute;
+  top: 5%;
+  left: 5%;
+  font-size: 40px;
+  color: grey;
+}
+
+.material-icons:hover {
+  cursor: pointer;
+  color: darkgrey;
+}
+
+button.mode {
+  width: 150px;
+}
+
+.container_rooms>div, .container_rooms, .container_mode {
+  text-align: center;
+}
+
+.ready {
+  border: 2px solid green;
+}
+
+button[disabled] {
+  cursor: not-allowed;
+}
+
+[data-show="false"] {
+  display: none;
+}
+
+.message {
+  margin-top: 30px;
+  font-size: 23px;
+  text-align: center;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(167, 167, 167, 0.3);
+  z-index: 500;
+}
+
+.timer {
+  color: red;
+  font-size: 50px;
+  position: absolute;
+  top: 5%;
+  left: 90%;
+}
+
+.star {
+  position: absolute;
+  top: 5%;
+  left: 90%;
+  font-size: 40px;
+  color: gold;
+}
