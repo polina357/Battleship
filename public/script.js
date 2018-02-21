@@ -312,22 +312,25 @@ socket.on('start', function (gameID) {
     }
   });
 
+  game.player1 = new Player({
+    field: '.player1',
+    size: game.size,
+    type: 'Player'
+  });
+
   window.addEventListener('keypress', game.keypressHandler = (e) => { // ctrl + shift + x
     if (e.ctrlKey && e.shiftKey && e.keyCode == 24) {
       message.innerHTML = 'You play as a bot';
       document.querySelector('.star').setAttribute('data-show', 'true');
+      let plMatrix = null;
+      if (game.player1.matrix.length) plMatrix = game.player1.matrix;
       game.player1 = new Bot({
         field: 'player1',
         size: game.size,
         type: 'Bot'
       });
+      if (plMatrix) game.player1.matrix = plMatrix;
     }
-  });
-
-  game.player1 = new Player({
-    field: '.player1',
-    size: game.size,
-    type: 'Player'
   });
 });
 

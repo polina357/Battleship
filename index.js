@@ -60,7 +60,6 @@ io.on('connection', function (socket) {
   });
 
   socket.on('shoot', function (coord, gameID) {
-    console.log(coord, gameID)
     socket.to(gameID).emit('shoot', coord);
   });
 
