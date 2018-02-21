@@ -1,18 +1,17 @@
 let socket = io();
 let params = {};
 
-document.querySelector('.exit').removeEventListener('click', handlerExit);
-document.querySelector('.play_with_player').addEventListener('click', () => {
+document.querySelector('.play_with_player').addEventListener('click', playWithPlayerHandler = () => {
   document.querySelector('.container_mode').setAttribute('data-show', 'false');
   document.querySelector('.container_rooms').setAttribute('data-show', 'true');
 
-  document.querySelector('.new_room').addEventListener('click', () => {
+  document.querySelector('.new_room').addEventListener('click', newRoomHandler = () => {
     params.playerID = ID();
     params.playerName = prompt('Enter your name', 'Player');
     socket.emit('new_room', params);
   });
 
-  document.querySelector('.connect').addEventListener('click', (e) => {
+  document.querySelector('.connect').addEventListener('click', connectHandler = (e) => {
     params.playerID = ID();
     params.selectedGame = document.querySelector('#existing_games').value;
     if (!params.selectedGame) {
@@ -62,9 +61,7 @@ class Player extends PlayerL {
         }
       }
       game.onRefresh(true);
-    } else if (res.result === 'wrong') {
-      game.onRefresh('wrong');
-    } else {
+    } else if (res.result !== 'wrong') {
       game.player1.enemyMatrix[x][y] = 2;
       game.onRefresh(false);
     }
@@ -191,6 +188,7 @@ class Bot extends Player {
   }
 }
 
+let handlerRanB, handlerRB;
 class Game {
   constructor(size) {
     this.size = size;
@@ -201,12 +199,12 @@ class Game {
   }
 
   addEvents() {
-    document.querySelector('.random').addEventListener('click', this.handlerRanB = () => {
+    document.querySelector('.random').addEventListener('click', handlerRanB = () => {
       this.player1.randomLocation();
       this.drawTable(this.player1.matrix, this.player1.enemyMatrix);
     });
 
-    ready.addEventListener('click', this.handlerRB = () => {
+    ready.addEventListener('click', handlerRB = () => {
       window.removeEventListener('keypress', this.keypressHandler);
       document.querySelector('.buttons').setAttribute('data-show', 'false');
       message.innerHTML = "Enemy's turn";
@@ -252,26 +250,30 @@ class Game {
     let elements = document.querySelectorAll('.boom');
     elements.forEach(element => {
       let sprite = new Motio(element, { fps: 10, frames: 12 });
-      sprite.play();
+      sprite.toEnd();
     });
   }
 
   destroy() {
     this.player1.destroy();
     params.gameID = '';
-    this.removeEvents();
+    removeEvents();
     document.querySelector('.buttons').setAttribute('data-show', 'true');
     ready.setAttribute('disabled', 'true');
   }
+}
 
-  removeEvents() {
-    document.querySelector('.random').removeEventListener('click', this.handlerRanB);
-    ready.removeEventListener('click', this.handlerRB);
-  }
+function removeEvents() {
+  document.querySelector('.new_room').removeEventListener('click', newRoomHandler);
+  document.querySelector('.connect').removeEventListener('click', connectHandler);
+  document.querySelector('.exit').removeEventListener('click', exitHandler);
+  document.querySelector('.random').removeEventListener('click', handlerRanB);
+  ready.removeEventListener('click', handlerRB);
 }
 
 
 socket.on('show_all_games', function (games) {
+  console.log(games);
   let allGames = tmpl("allgameselect", {
     allgames: games
   });
@@ -285,9 +287,12 @@ socket.on('start', function (gameID) {
   localStorage.gameID = params.selectedGame;
   localStorage.playerID = params.playerID;
 
+  game = new Game(10);
+
   document.querySelector('.container_rooms').setAttribute('data-show', 'false');
   document.querySelector('.container').setAttribute('data-show', 'true');
-  document.querySelector('.exit').addEventListener('click', (e) => {
+  document.querySelector('.exit').removeEventListener('click', handlerExit);
+  document.querySelector('.exit').addEventListener('click', exitHandler = (e) => {
     if (confirm('Are you sure?')) {
       socket.emit('player_exit', params);
       params.selectedGame = '';
@@ -295,12 +300,12 @@ socket.on('start', function (gameID) {
       localStorage.removeItem('playerInformation');
       document.querySelector('.container').setAttribute('data-show', 'false');
       document.querySelector('.container_mode').setAttribute('data-show', 'true');
+      game.destroy();
     } else {
       return;
     }
   });
 
-  game = new Game(10);
   window.addEventListener('keypress', game.keypressHandler = (e) => { // ctrl + shift + x
     if (e.ctrlKey && e.shiftKey && e.keyCode == 24) {
       message.innerHTML = 'You play as a bot';
@@ -322,11 +327,15 @@ socket.on('start', function (gameID) {
 
 socket.on('ready', function (name) {
   params.enemyName = name;
+  localStorage.enemyName = name;
 });
 
 socket.on('go go', function (name) {
   console.log('go go');
-  if (name) params.enemyName = name;
+  if (name) {
+    params.enemyName = name;
+    localStorage.enemyName = name;
+  }
   message.innerHTML = 'Your turn';
   game.player1.changeTurn = true;
   localStorage.playerInformation = JSON.stringify(game.player1);
@@ -381,50 +390,43 @@ socket.on('enemy_disconnected', function () {
 
 socket.on('player_exit', function () {
   alert('The second player gave up');
-  if (timer) {
-    clearInterval(timer);
-    overlay.setAttribute('data-show', 'false');
-  }
-
-  params.selectedGame = '';
-  params.enemyName = 'Enemy';
-  localStorage.removeItem('gameID');
-  localStorage.removeItem('playerInformation');
-  document.querySelector('.container').setAttribute('data-show', 'false');
-  document.querySelector('.container_mode').setAttribute('data-show', 'true');
+  socket.emit('player_exit', params);
 });
+
+socket.on('game_removed', function (gameS) {
+  if (params.selectedGame === gameS.gameID) {
+    params.selectedGame = '';
+    game.destroy();
+    localStorage.removeItem('gameID');
+    localStorage.removeItem('playerInformation');
+    document.querySelector('.container').setAttribute('data-show', 'false');
+    document.querySelector('.container_mode').setAttribute('data-show', 'true');
+  }
+})
 
 socket.on('check_for_reconnection', function (games) {
   if (localStorage.gameID && games.findIndex(x => x.gameID === localStorage.gameID) !== -1) {
     if (confirm('Do you want to reconnect?') && games.findIndex(x => x.gameID === localStorage.gameID) !== -1) {
       socket.emit('reconnect_player', localStorage.playerID, localStorage.gameID);
     } else {
-      socket.emit('not_reconnect', localStorage.gameID);
       localStorage.removeItem('gameID');
+      socket.emit('not_reconnect');
     }
   } else {
-    socket.emit('not_reconnect', localStorage.gameID);
+    socket.emit('not_reconnect');
   }
 });
 
-socket.on('reconnect_player', function () {
+socket.on('reconnect_player', function (player) {
+  console.log(player);
   document.querySelector('.container_mode').setAttribute('data-show', 'false');
   document.querySelector('.container').setAttribute('data-show', 'true');
-  document.querySelector('.exit').addEventListener('click', (e) => {
-    if (confirm('Are you sure?')) {
-      socket.emit('player_exit', params);
-      params.selectedGame = '';
-      localStorage.removeItem('gameID');
-      localStorage.removeItem('playerInformation');
-      document.querySelector('.container').setAttribute('data-show', 'false');
-      document.querySelector('.container_mode').setAttribute('data-show', 'true');
-    } else {
-      return;
-    }
-  });
+
   document.querySelector('.buttons').setAttribute('data-show', 'false');
   game = new Game(10);
+  params.playerName = player.name;
   params.selectedGame = localStorage.gameID;
+  params.enemyName = localStorage.enemyName;
   let obj = JSON.parse(localStorage.playerInformation);
   game.player1 = new Player(obj.options);
   game.player1.matrix = obj.matrix;
@@ -440,10 +442,10 @@ socket.on('reconnect_player', function () {
   } else {
     message.innerHTML = "Your turn";
   }
-  socket.emit('enemy_is_back', localStorage.gameID);
+  socket.emit('enemy_is_back', localStorage.gameID, localStorage.playerID);
 });
 
-socket.on('enemy_is_back', function () {
+socket.on('enemy_is_back', function (player) {
   clearInterval(timer);
   document.querySelector('.overlay').setAttribute('data-show', 'false');
   game.drawTable(game.player1.matrix, game.player1.enemyMatrix);

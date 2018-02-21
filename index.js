@@ -18,11 +18,8 @@ io.on('connection', function (socket) {
   console.log('new user connected');
   if (games.length) socket.emit('check_for_reconnection', games);
 
-  socket.on('not_reconnect', function (gameID) {
-    socket.emit('show_all_games', games);
-    socket.to(gameID).emit('player_exit');
-    let i = games.findIndex(x => x.gameID === gameID);
-    games.splice(i, 1);
+  socket.on('not_reconnect', function () {
+    io.emit('show_all_games', games);
   });
 
   socket.on('new_room', function (params) {
@@ -45,13 +42,14 @@ io.on('connection', function (socket) {
   });
 
   socket.on('select_room', function (params) {
-    let i = games.findIndex(x => x.gameID === params.selectedGame);
-    games[i].players.push({
+    let game = games.find(x => x.gameID === params.selectedGame);
+    if (!game) return;
+    game.players.push({
       playerID: params.playerID,
       name: params.playerName,
       socketID: socket.id
     });
-    games[i].busy = true;
+    game.busy = true;
     socket.join(params.selectedGame);
     socket.emit('start');
   });
@@ -61,15 +59,18 @@ io.on('connection', function (socket) {
   });
 
   socket.on('ready', function (matrix, params) {
-    let i = games.findIndex(x => x.gameID === params.selectedGame);
-    games[i].readyPlayers++;
-
-    if (games[i].readyPlayers === 2) {
-      socket.emit('ready', games[i].players[0].name);
-      socket.to(params.selectedGame).emit('go go', games[i].players[1].name);
-    } else if (games[i].readyPlayers === 1) {
-      socket.emit('wait');
+    console.log('ready');
+    let game = games.find(x => x.gameID === params.selectedGame);
+    if (!game) return;
+    game.readyPlayers++;
+    console.log('ready', game.players);
+    if (game.players.length === 2) {
+      socket.emit('ready', game.players[0].name);
+      socket.to(params.selectedGame).emit('go go', game.players[1].name);
+      return;
     }
+    console.log('wait');
+    socket.emit('wait');
   });
 
   socket.on('go go', function (gameID) {
@@ -81,10 +82,12 @@ io.on('connection', function (socket) {
   });
 
   socket.on('wait', function () {
+    console.log('wait')
     socket.emit('wait');
   });
 
   socket.on('win', function (gameID) {
+    console.log('win')
     let i = games.findIndex(x => x.gameID === gameID);
     games.splice(i, 1);
     socket.emit('win');
@@ -92,52 +95,77 @@ io.on('connection', function (socket) {
   });
 
   socket.on('player_exit', function (params) {
-    let i = games.findIndex(x => x.gameID === params.selectedGame);
-    for (let j = 0; j < games[i].players.length; j++) {
-      if (games[i].players[j].playerID === params.playerID) {
-        games[i].players.splice[j, 1];
+    console.log('player_exit', params);
+    let game = games.find(x => x.gameID === params.selectedGame);
+    if (!game) return;
+    for (let j = 0; j < game.players.length; j++) {
+      if (game.players[j].playerID === params.playerID) {
+        console.log('player_remove')
+        game.players.splice(j, 1);
+        break;
       }
     }
-    if (games[i].players) {
+    console.log('players', game.players);
+    if (game.players.length) {
       socket.to(params.selectedGame).emit('player_exit');
     } else {
-      games.splice(i, 1);
+      console.log('remove empty game');
+      socket.emit('game_removed', game);
+      games.splice(games.indexOf(game), 1);
     }
+    io.emit('show_all_games', games);
   });
 
   socket.on('disconnect', function () {
-    let index;
-    for (let i = 0; i < games.length; i++) {
-      for (let j = 0; j < games[i].players.length; j++) {
-        if (games[i].players[j].socketID === socket.id) {
-          games[i].players.splice(j, 1);
-          index = i;
+    console.log('disconnect');
+    let index = false;
+    for (let i = 0, game; i < games.length; i++) {
+      game = games[i];
+      for (let j = 0, player; j < game.players.length; j++) {
+        player = game.players[j];
+        if (player.socketID === socket.id) {
+          player.inactive = true;
+          socket.to(game.gameID).emit('enemy_disconnected');
+          index = true;
+          if (game.players.filter(pl => pl.inactive).length == 2) {
+            console.log('remove empty game after disconnect')
+            games.splice(i, 1);
+          }
           break;
         }
       }
+      if (index) {
+        break;
+      }
     }
-
-    if (games[index] && games[index].players && !games[index].players.length) {
-      games.splice(index, 1);
-    } else if (games[index] && index !== -1) {
-      socket.to(games[index].gameID).emit('enemy_disconnected');
-    }
+    io.emit('show_all_games', games);
   });
 
   socket.on('reconnect_player', function (playerID, gameID) {
+    console.log('reconnect_player')
     socket.join(gameID);
-    let i = games.findIndex(x => x.gameID === gameID);
-    games[i].players.push({ playerID, socketID: socket.id });
-    socket.emit('reconnect_player');
+    let game = games.find(x => x.gameID === gameID);
+    if (!game) return;
+    let player = game.players.find(pl => pl.playerID === playerID);
+    player.socketID = socket.id;
+    if (player.inactive) delete player.inactive;
+    socket.emit('reconnect_player', player);
   });
 
-  socket.on('enemy_is_back', function (gameID) {
-    socket.to(gameID).emit('enemy_is_back');
+  socket.on('enemy_is_back', function (gameID, playerID) {
+    let game = games.find(x => x.gameID === gameID);
+    console.log(game);
+    if (!game) return;
+    let player = game.players.find(pl => pl.playerID === playerID);
+    socket.to(gameID).emit('enemy_is_back', player);
   });
 
   socket.on('time_is_up', function (gameID) {
-    let i = games.findIndex(x => x.gameID === gameID);
-    games.splice(i, 1);
+    console.log('time_is_up')
+    let game = games.find(x => x.gameID === gameID);
+    if (!game) return;
+    games.splice(games.indexOf(game), 1);
     socket.emit('time_is_up');
+    io.emit('show_all_games', games);
   });
 });

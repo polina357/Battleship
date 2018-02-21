@@ -35,6 +35,7 @@ caption {
 
 .boom {
   background: url('media/explode.png');
+  background-size: cover;
 }
 
 .field {
