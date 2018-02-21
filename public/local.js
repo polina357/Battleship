@@ -143,7 +143,6 @@ class PlayerL {
   }
 
   check({ x, y }) {
-    console.log(this.matrix);
     let result = this.matrix[x][y];
     if (result === 1) {
       this.matrix[x][y] = 3;
@@ -336,6 +335,16 @@ class GameL {
       ready.style.display = 'none';
       this.getPlayer();
     });
+
+    document.querySelector('.exit').addEventListener('click', this.handlerExit = (e) => {
+      if (confirm('Are you sure?')) {
+        game.destroy();
+        document.querySelector('.container').setAttribute('data-show', 'false');
+        document.querySelector('.container_mode').setAttribute('data-show', 'true');
+      } else {
+        return;
+      }
+    });
   }
 
   shootCallback({ x, y }) {
@@ -398,7 +407,7 @@ class GameL {
     let elements = document.querySelectorAll('.boom');
     elements.forEach(element => {
       let sprite = new Motio(element, { fps: 10, frames: 12 });
-      sprite.play();
+      sprite.toEnd();
     });
   }
 
@@ -431,6 +440,7 @@ class GameL {
   removeEvents() {
     randomB.removeEventListener('click', this.handlerRanB);
     ready.removeEventListener('click', this.handlerRB);
+    document.querySelector('.exit').removeEventListener('click', this.handlerExit);
   }
 }
 
@@ -439,14 +449,4 @@ document.querySelector('.play_with_bot').addEventListener('click', () => {
   document.querySelector('.play_with_player').setAttribute('data-show', 'false');
   document.querySelector('.container').setAttribute('data-show', 'true');
   game = new GameL(10);
-});
-
-document.querySelector('.exit').addEventListener('click', handlerExit = (e) => {
-  if (confirm('Are you sure?')) {
-    game.destroy();
-    document.querySelector('.container').setAttribute('data-show', 'false');
-    document.querySelector('.container_mode').setAttribute('data-show', 'true');
-  } else {
-    e.preventDefault();
-  }
 });

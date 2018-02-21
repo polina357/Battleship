@@ -79,7 +79,6 @@ io.on('connection', function (socket) {
   });
 
   socket.on('go go', function (gameID) {
-    console.log('go go', gameID);
     socket.to(gameID).emit('go go');
   });
 
@@ -137,7 +136,6 @@ io.on('connection', function (socket) {
           socket.to(game.gameID).emit('enemy_disconnected');
           index = true;
           console.log('Disconnected player', player);
-          console.log(game.players.filter(pl => pl.inactive).length);
           if (game.players.filter(pl => pl.inactive).length == game.players.length) {
             console.log('remove empty game after disconnect')
             games.splice(i, 1);

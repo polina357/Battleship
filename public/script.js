@@ -95,7 +95,7 @@ class Bot extends Player {
 
   shoot() {
     let coord = this.getCoordinatesForShot();
-    socket.emit('shoot', coord, params.selectedGame);
+    if (coord) socket.emit('shoot', coord, params.selectedGame);
   }
 
   shootCallback(res) {
@@ -298,7 +298,6 @@ socket.on('start', function (gameID) {
 
   document.querySelector('.container_rooms').setAttribute('data-show', 'false');
   document.querySelector('.container').setAttribute('data-show', 'true');
-  document.querySelector('.exit').removeEventListener('click', handlerExit);
   document.querySelector('.exit').addEventListener('click', exitHandler = (e) => {
     if (confirm('Are you sure?')) {
       socket.emit('player_exit', params);
