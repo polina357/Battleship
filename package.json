@@ -3,19 +3,10 @@
   "version": "0.0.1",
   "description": "battleship game",
   "scripts": {
-    "start": "node index",
-    "browserify": {
-      "transform": [["babelify", { "presets": ["env"] }]]
-    }
+    "start": "node index"
   },
   "dependencies": {
     "express": "^4.15.2",
     "socket.io": "^2.0.4"
-  },
-  "devDependencies": {
-    "babel-core": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
-    "babel-preset-react": "^6.24.1",
-    "babelify": "^8.0.0"
   }
 }

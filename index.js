@@ -9,7 +9,6 @@ app.use(express.static(__dirname + '/public'));
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/index.html');
 });
-
 http.listen(3000, function () {
   console.log('listening on *:3000');
 });
@@ -19,10 +18,12 @@ io.on('connection', function (socket) {
   if (games.length) socket.emit('check_for_reconnection', games);
 
   socket.on('not_reconnect', function () {
+    console.log('not_reconnect');
     io.emit('show_all_games', games);
   });
 
   socket.on('new_room', function (params) {
+    console.log('new_room');
     let gameID = '_' + Math.random().toString(36).substr(2, 9);
     socket.join(gameID);
     games.push({
@@ -37,6 +38,7 @@ io.on('connection', function (socket) {
       readyPlayers: 0,
       busy: false
     });
+    console.log(games);
     socket.emit('start', gameID);
     io.emit('show_all_games', games);
   });
@@ -50,35 +52,39 @@ io.on('connection', function (socket) {
       socketID: socket.id
     });
     game.busy = true;
+
+    console.log(games);
     socket.join(params.selectedGame);
     socket.emit('start');
     io.emit('show_all_games', games);
   });
 
-  socket.on('shoot', function (params, gameID) {
-    socket.to(gameID).emit('shoot', params);
+  socket.on('shoot', function (coord, gameID) {
+    console.log(coord, gameID)
+    socket.to(gameID).emit('shoot', coord);
   });
 
   socket.on('ready', function (matrix, params) {
-    console.log('ready');
     let game = games.find(x => x.gameID === params.selectedGame);
     if (!game) return;
     game.readyPlayers++;
-    console.log('ready', game.players);
+    console.log('ready', game);
     if (game.players.length === 2) {
       socket.emit('ready', game.players[0].name);
       socket.to(params.selectedGame).emit('go go', game.players[1].name);
       return;
     }
-    console.log('wait');
+    console.log(matrix, params);
     socket.emit('wait');
   });
 
   socket.on('go go', function (gameID) {
+    console.log('go go', gameID);
     socket.to(gameID).emit('go go');
   });
 
   socket.on('shootCallback', function (res, gameID) {
+    console.log(res, gameID);
     socket.to(gameID).emit('shootCallback', res);
   });
 
@@ -88,9 +94,10 @@ io.on('connection', function (socket) {
   });
 
   socket.on('win', function (gameID) {
-    console.log('win')
+    console.log('win', gameID);
     let i = games.findIndex(x => x.gameID === gameID);
     games.splice(i, 1);
+    console.log(games);
     socket.emit('win');
     socket.to(gameID).emit('lose');
   });
@@ -101,7 +108,7 @@ io.on('connection', function (socket) {
     if (!game) return;
     for (let j = 0; j < game.players.length; j++) {
       if (game.players[j].playerID === params.playerID) {
-        console.log('player_remove')
+        console.log('player_remove');
         game.players.splice(j, 1);
         break;
       }
@@ -114,11 +121,12 @@ io.on('connection', function (socket) {
       socket.emit('game_removed', game);
       games.splice(games.indexOf(game), 1);
     }
+    console.log(games);
     io.emit('show_all_games', games);
   });
 
   socket.on('disconnect', function () {
-    console.log('disconnect');
+    console.log('disconnect', socket.id);
     let index = false;
     for (let i = 0, game; i < games.length; i++) {
       game = games[i];
@@ -128,7 +136,9 @@ io.on('connection', function (socket) {
           player.inactive = true;
           socket.to(game.gameID).emit('enemy_disconnected');
           index = true;
-          if (game.players.filter(pl => pl.inactive).length == 2) {
+          console.log('Disconnected player', player);
+          console.log(game.players.filter(pl => pl.inactive).length);
+          if (game.players.filter(pl => pl.inactive).length == game.players.length) {
             console.log('remove empty game after disconnect')
             games.splice(i, 1);
           }
@@ -139,6 +149,7 @@ io.on('connection', function (socket) {
         break;
       }
     }
+    console.log('Games after disconnect', games);
     io.emit('show_all_games', games);
   });
 
@@ -146,19 +157,23 @@ io.on('connection', function (socket) {
     console.log('reconnect_player')
     socket.join(gameID);
     let game = games.find(x => x.gameID === gameID);
+    console.log(game);
     if (!game) return;
     let player = game.players.find(pl => pl.playerID === playerID);
+    console.log(player);
     if (!player) return;
     player.socketID = socket.id;
     if (player.inactive) delete player.inactive;
+    console.log('reconnect player', player);
     socket.emit('reconnect_player', player);
   });
 
   socket.on('enemy_is_back', function (gameID, playerID) {
     let game = games.find(x => x.gameID === gameID);
-    console.log(game);
+    console.log('Enemy_is_back, found game: ',game);
     if (!game) return;
     let player = game.players.find(pl => pl.playerID === playerID);
+    console.log(player);
     socket.to(gameID).emit('enemy_is_back', player);
   });
 
@@ -167,6 +182,7 @@ io.on('connection', function (socket) {
     let game = games.find(x => x.gameID === gameID);
     if (!game) return;
     games.splice(games.indexOf(game), 1);
+    console.log(games);
     socket.emit('time_is_up');
     io.emit('show_all_games', games);
   });

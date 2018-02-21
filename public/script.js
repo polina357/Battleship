@@ -6,8 +6,11 @@ document.querySelector('.play_with_player').addEventListener('click', playWithPl
   document.querySelector('.container_rooms').setAttribute('data-show', 'true');
 
   document.querySelector('.new_room').addEventListener('click', newRoomHandler = () => {
+    let name = prompt('Enter your name', 'Player');
+    if (!name) return alert('Enter your name, please');
+    params.playerName = name;
     params.playerID = ID();
-    params.playerName = prompt('Enter your name', 'Player');
+
     socket.emit('new_room', params);
   });
 
@@ -143,7 +146,7 @@ class Bot extends Player {
       coord = this.getNesCoords();
       this.orX = -1;
       this.orY = -1;
-      return { x: coord.x, y: coord.y };
+      if (coord) return { x: coord.x, y: coord.y };
     }
   }
 
@@ -174,7 +177,7 @@ class Bot extends Player {
   getNesCoords() {
     for (let x = 0; x < this.size; x++) {
       for (let y = 0; y < this.size; y++) {
-        if (!this.enemyMatrix[x][y]) {
+        if (this.enemyMatrix.length && !this.enemyMatrix[x][y]) {
           if (this.displ !== 1) {
             if (((x + y) - (3 - this.displ)) % this.kSearch === 0) {
               return { x, y };
@@ -188,7 +191,7 @@ class Bot extends Player {
   }
 }
 
-let handlerRanB, handlerRB;
+let handlerRanB, handlerRB, timer;
 class Game {
   constructor(size) {
     this.size = size;
@@ -260,6 +263,8 @@ class Game {
     removeEvents();
     document.querySelector('.buttons').setAttribute('data-show', 'true');
     ready.setAttribute('disabled', 'true');
+    document.querySelector('.star').setAttribute('data-show', 'false');
+    message.innerHTML = 'Place your ships';
   }
 }
 
@@ -269,11 +274,13 @@ function removeEvents() {
   document.querySelector('.exit').removeEventListener('click', exitHandler);
   document.querySelector('.random').removeEventListener('click', handlerRanB);
   ready.removeEventListener('click', handlerRB);
+  window.removeEventListener('keypress', game.keypressHandler);
+  clearInterval(timer);
+  document.querySelector('.overlay').setAttribute('data-show', 'false');
 }
 
 
 socket.on('show_all_games', function (games) {
-  console.log(games);
   let allGames = tmpl("allgameselect", {
     allgames: games
   });
@@ -342,6 +349,7 @@ socket.on('go go', function (name) {
 });
 
 socket.on('shoot', function (coords) {
+  console.log(game.player1);
   var res = game.player1.check(coords);
   localStorage.playerInformation = JSON.stringify(game.player1);
   game.drawTable(game.player1.matrix, game.player1.enemyMatrix);
@@ -371,7 +379,6 @@ socket.on('wait', function () {
   message.innerHTML = 'Waiting for the second player...'
 });
 
-let timer;
 socket.on('enemy_disconnected', function () {
   let time = document.querySelector('.timer');
   time.innerHTML = 60;
@@ -418,7 +425,6 @@ socket.on('check_for_reconnection', function (games) {
 });
 
 socket.on('reconnect_player', function (player) {
-  console.log(player);
   document.querySelector('.container_mode').setAttribute('data-show', 'false');
   document.querySelector('.container').setAttribute('data-show', 'true');
 

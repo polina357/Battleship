@@ -143,6 +143,7 @@ class PlayerL {
   }
 
   check({ x, y }) {
+    console.log(this.matrix);
     let result = this.matrix[x][y];
     if (result === 1) {
       this.matrix[x][y] = 3;
