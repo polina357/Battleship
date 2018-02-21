@@ -52,6 +52,7 @@ io.on('connection', function (socket) {
     game.busy = true;
     socket.join(params.selectedGame);
     socket.emit('start');
+    io.emit('show_all_games', games);
   });
 
   socket.on('shoot', function (params, gameID) {
@@ -147,6 +148,7 @@ io.on('connection', function (socket) {
     let game = games.find(x => x.gameID === gameID);
     if (!game) return;
     let player = game.players.find(pl => pl.playerID === playerID);
+    if (!player) return;
     player.socketID = socket.id;
     if (player.inactive) delete player.inactive;
     socket.emit('reconnect_player', player);
