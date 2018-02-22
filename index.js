@@ -17,8 +17,15 @@ io.on('connection', function (socket) {
   console.log('new user connected');
   if (games.length) socket.emit('check_for_reconnection', games);
 
-  socket.on('not_reconnect', function () {
+  socket.on('not_reconnect', function (gameID) {
     console.log('not_reconnect');
+    if (gameID) {
+      let game = games.find(x => x.gameID === gameID);
+      games.splice(games.indexOf(game), 1);
+      console.log('removed game ', game);
+      socket.to(gameID).emit('player_exit');
+    }
+    console.log('Games after not reconnection: ', games);
     io.emit('show_all_games', games);
   });
 
@@ -104,23 +111,10 @@ io.on('connection', function (socket) {
   socket.on('player_exit', function (params) {
     console.log('player_exit', params);
     let game = games.find(x => x.gameID === params.selectedGame);
-    if (!game) return;
-    for (let j = 0; j < game.players.length; j++) {
-      if (game.players[j].playerID === params.playerID) {
-        console.log('player_remove');
-        game.players.splice(j, 1);
-        break;
-      }
-    }
-    console.log('players', game.players);
-    if (game.players.length) {
-      socket.to(params.selectedGame).emit('player_exit');
-    } else {
-      console.log('remove empty game');
-      socket.emit('game_removed', game);
-      games.splice(games.indexOf(game), 1);
-    }
-    console.log(games);
+    games.splice(games.indexOf(game), 1);
+    console.log(game);
+    socket.to(params.selectedGame).emit('player_exit');
+    console.log('Games after player exit: ', games);
     io.emit('show_all_games', games);
   });
 

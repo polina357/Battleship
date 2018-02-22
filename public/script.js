@@ -275,8 +275,6 @@ function removeEvents() {
   document.querySelector('.overlay').setAttribute('data-show', 'false');
 }
 
-///// you lost
-
 socket.on('show_all_games', function (games) {
   let allGames = tmpl("allgameselect", {
     allgames: games
@@ -297,13 +295,13 @@ socket.on('start', function (gameID) {
   document.querySelector('.container').setAttribute('data-show', 'true');
   document.querySelector('.exit').addEventListener('click', exitHandler = (e) => {
     if (confirm('Are you sure?')) {
-      socket.emit('player_exit', params);
-      params.selectedGame = '';
       localStorage.removeItem('gameID');
       localStorage.removeItem('playerInformation');
       document.querySelector('.container').setAttribute('data-show', 'false');
       document.querySelector('.container_mode').setAttribute('data-show', 'true');
       game.destroy();
+      socket.emit('player_exit', params);
+      params.selectedGame = '';
     } else {
       return;
     }
@@ -354,7 +352,7 @@ socket.on('go go', function (name) {
 });
 
 socket.on('shoot', function (coords) {
-  var res = game.player1.check(coords);
+  if (coords) var res = game.player1.check(coords);
   localStorage.playerInformation = JSON.stringify(game.player1);
   game.drawTable(game.player1.matrix, game.player1.enemyMatrix);
   socket.emit('shootCallback', res, params.selectedGame);
@@ -401,27 +399,23 @@ socket.on('enemy_disconnected', function () {
 
 socket.on('player_exit', function () {
   alert('The second player gave up');
-  socket.emit('player_exit', params);
+  console.log('player exit');
+  params.selectedGame = '';
+  game.destroy();
+  localStorage.removeItem('gameID');
+  localStorage.removeItem('playerInformation');
+  document.querySelector('.container').setAttribute('data-show', 'false');
+  document.querySelector('.container_mode').setAttribute('data-show', 'true');
+  // socket.emit('player_exit', params);
 });
-
-socket.on('game_removed', function (gameS) {
-  if (params.selectedGame === gameS.gameID) {
-    params.selectedGame = '';
-    game.destroy();
-    localStorage.removeItem('gameID');
-    localStorage.removeItem('playerInformation');
-    document.querySelector('.container').setAttribute('data-show', 'false');
-    document.querySelector('.container_mode').setAttribute('data-show', 'true');
-  }
-})
 
 socket.on('check_for_reconnection', function (games) {
   if (localStorage.gameID && games.findIndex(x => x.gameID === localStorage.gameID) !== -1) {
     if (confirm('Do you want to reconnect?') && games.findIndex(x => x.gameID === localStorage.gameID) !== -1) {
       socket.emit('reconnect_player', localStorage.playerID, localStorage.gameID);
     } else {
+      socket.emit('not_reconnect', localStorage.gameID);
       localStorage.removeItem('gameID');
-      socket.emit('not_reconnect');
     }
   } else {
     socket.emit('not_reconnect');
