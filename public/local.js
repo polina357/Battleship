@@ -13,7 +13,7 @@ function preload() {
 var explosion;
 var animation;
 var coordCanvas;
-var fx;
+var exp;
 
 function create() {
   gameP.stage.backgroundColor = 'FFFFFF';
@@ -23,11 +23,11 @@ function create() {
 
 function explosionHandler(coordInMatrix, classOfField) {
   let cell = document.querySelector(classOfField).rows[coordInMatrix.x + 1].cells[coordInMatrix.y + 1];
-  exp.play();
   let coord = cell.getBoundingClientRect();
   explosion = gameP.add.sprite(coord.left - coordCanvas.left, coord.top - coordCanvas.top, 'kaboom');
   animation = explosion.animations.add('explode');
   explosion.animations.play('explode', 30, false);
+  exp.play();
 }
 
 class PlayerL {
@@ -467,6 +467,7 @@ class GameL {
     document.querySelector('.container').setAttribute('data-show', 'false');
     document.querySelector('.play_with_bot').setAttribute('data-show', 'true');
     document.querySelector('.play_with_player').setAttribute('data-show', 'true');
+    message.innerHTML = 'Place your ships';
     gameP.destroy();
   }
 

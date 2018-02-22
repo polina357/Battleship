@@ -36,6 +36,7 @@ io.on('connection', function (socket) {
         }
       ],
       readyPlayers: 0,
+      namesInOrder: [],
       busy: false
     });
     console.log(games);
@@ -66,11 +67,11 @@ io.on('connection', function (socket) {
   socket.on('ready', function (matrix, params) {
     let game = games.find(x => x.gameID === params.selectedGame);
     if (!game) return;
-    game.readyPlayers++;
+    game.namesInOrder.push(params.name);
     console.log('ready', game);
-    if (game.players.length === 2) {
-      socket.emit('ready', game.players[0].name);
-      socket.to(params.selectedGame).emit('go go', game.players[1].name);
+    if (game.namesInOrder.length === 2) {
+      socket.emit('ready', game.namesInOrder[0]);
+      socket.to(params.selectedGame).emit('go go', game.namesInOrder[1]);
       return;
     }
     console.log(matrix, params);
@@ -167,7 +168,7 @@ io.on('connection', function (socket) {
 
   socket.on('enemy_is_back', function (gameID, playerID) {
     let game = games.find(x => x.gameID === gameID);
-    console.log('Enemy_is_back, found game: ',game);
+    console.log('Enemy_is_back, found game: ', game);
     if (!game) return;
     let player = game.players.find(pl => pl.playerID === playerID);
     console.log(player);
