@@ -260,7 +260,7 @@ class Game {
     ready.setAttribute('disabled', 'true');
     document.querySelector('.star').setAttribute('data-show', 'false');
     message.innerHTML = 'Place your ships';
-    gameP = null;
+    gameP.destroy();
   }
 }
 
@@ -336,7 +336,6 @@ socket.on('ready', function (name) {
 });
 
 socket.on('go go', function (name) {
-  console.log('go go');
   if (name) {
     params.enemyName = name;
     localStorage.enemyName = name;
@@ -347,7 +346,6 @@ socket.on('go go', function (name) {
 });
 
 socket.on('shoot', function (coords) {
-  console.log(game.player1);
   var res = game.player1.check(coords);
   localStorage.playerInformation = JSON.stringify(game.player1);
   game.drawTable(game.player1.matrix, game.player1.enemyMatrix);

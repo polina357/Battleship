@@ -264,6 +264,18 @@ class BotL extends PlayerL {
     }
   }
 
+  check({ x, y }) {
+    let result = this.matrix[x][y];
+    if (result === 1) {
+      this.matrix[x][y] = 3;
+    } else if (result === 0) {
+      this.matrix[x][y] = 2;
+    } else {
+      result = 'wrong';
+    }
+    return { result, deadShip: this.findShip({ x, y }), coord: { x, y } };
+  }
+
   getCoordinatesForShot() {
     let x, y, coord = 0;
     if (this.needShot.length) {
@@ -384,8 +396,7 @@ class GameL {
     if (!aim) {
       this.activePlayer = this.activePlayer === this.player1 ? this.player2 : this.player1;
       this.inactivePlayer = this.inactivePlayer === this.player1 ? this.player2 : this.player1;
-    } else {
-      audio.play();
+      message.innerHTML = this.activePlayer.type === 'Bot' ? "Bot's turn" : "Your turn";
     }
     this.changeTurn();
   }
@@ -398,7 +409,7 @@ class GameL {
     } else {
       setTimeout(() => {
         this.activePlayer.shoot();
-      }, 10);
+      }, 20);
     }
   }
 
@@ -456,7 +467,7 @@ class GameL {
     document.querySelector('.container').setAttribute('data-show', 'false');
     document.querySelector('.play_with_bot').setAttribute('data-show', 'true');
     document.querySelector('.play_with_player').setAttribute('data-show', 'true');
-    gameP = null;
+    gameP.destroy();
   }
 
   removeEvents() {
