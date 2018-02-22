@@ -10,7 +10,6 @@ document.querySelector('.play_with_player').addEventListener('click', playWithPl
     if (!name) return alert('Enter your name, please');
     params.playerName = name;
     params.playerID = ID();
-
     socket.emit('new_room', params);
   });
 
@@ -55,7 +54,7 @@ class Player extends PlayerL {
     let x = res.coord.x, y = res.coord.y;
     if (res.result === 1) {
       this.enemyMatrix[x][y] = 3;
-      audio.play();
+      explosionHandler(res.coord, '.player2');
       if (res.deadShip) {
         this.count++;
         this.enemyMatrix = this.markCells(res.deadShip, this.enemyMatrix);
@@ -101,6 +100,7 @@ class Bot extends Player {
   shootCallback(res) {
     let coord = res.coord;
     if (res.result === 1) {
+      explosionHandler(coord, '.player2');
       this.enemyMatrix[coord.x][coord.y] = 3;
       if (res.deadShip) {
         this.count++;
@@ -194,6 +194,7 @@ class Bot extends Player {
 let handlerRanB, handlerRB, timer;
 class Game {
   constructor(size) {
+    gameP = new Phaser.Game(900, 500, Phaser.AUTO, 'field-canvas', { preload: preload, create: create })
     this.size = size;
     params.enemyName = 'Enemy';
     let fields = this.drawTable([this.size][this.size]);
@@ -249,12 +250,6 @@ class Game {
 
     battlefield.innerHTML = table1;
     battlefield.innerHTML += table2;
-
-    let elements = document.querySelectorAll('.boom');
-    elements.forEach(element => {
-      let sprite = new Motio(element, { fps: 10, frames: 12 });
-      sprite.toEnd();
-    });
   }
 
   destroy() {
@@ -265,6 +260,7 @@ class Game {
     ready.setAttribute('disabled', 'true');
     document.querySelector('.star').setAttribute('data-show', 'false');
     message.innerHTML = 'Place your ships';
+    gameP = null;
   }
 }
 

@@ -3,7 +3,32 @@ let randomB = document.querySelector('.random');
 let message = document.querySelector('.message');
 let game;
 
-let audio = new Audio('media/audio.wav');
+var gameP;
+
+function preload() {
+  gameP.load.spritesheet('kaboom', 'assets/explode.png', 35, 35);
+  gameP.load.audio('exp', 'assets/audio.wav');
+}
+
+var explosion;
+var animation;
+var coordCanvas;
+var fx;
+
+function create() {
+  gameP.stage.backgroundColor = 'FFFFFF';
+  exp = gameP.add.audio('exp');
+  coordCanvas = document.querySelector('#field-canvas').getBoundingClientRect();
+}
+
+function explosionHandler(coordInMatrix, classOfField) {
+  let cell = document.querySelector(classOfField).rows[coordInMatrix.x + 1].cells[coordInMatrix.y + 1];
+  exp.play();
+  let coord = cell.getBoundingClientRect();
+  explosion = gameP.add.sprite(coord.left - coordCanvas.left, coord.top - coordCanvas.top, 'kaboom');
+  animation = explosion.animations.add('explode');
+  explosion.animations.play('explode', 30, false);
+}
 
 class PlayerL {
   constructor(options) {
@@ -129,6 +154,7 @@ class PlayerL {
       res = game.shootCallback({ x, y });
     if (res.result === 1) {
       this.enemyMatrix[x][y] = 3;
+      explosionHandler({ x, y }, '.player2');
       if (res.deadShip) {
         this.count++;
         this.enemyMatrix = this.markCells(res.deadShip, this.enemyMatrix);
@@ -146,7 +172,7 @@ class PlayerL {
     let result = this.matrix[x][y];
     if (result === 1) {
       this.matrix[x][y] = 3;
-      audio.play();
+      explosionHandler({ x, y }, '.player1');
     } else if (result === 0) {
       this.matrix[x][y] = 2;
     } else {
@@ -305,6 +331,7 @@ class BotL extends PlayerL {
 
 class GameL {
   constructor(size) {
+    gameP = new Phaser.Game(900, 500, Phaser.AUTO, 'field-canvas', { preload: preload, create: create })
     this.size = size;
     let fields = this.drawTable([this.size][this.size]);
 
@@ -403,12 +430,6 @@ class GameL {
 
     battlefield.innerHTML = table1;
     battlefield.innerHTML += table2;
-
-    let elements = document.querySelectorAll('.boom');
-    elements.forEach(element => {
-      let sprite = new Motio(element, { fps: 10, frames: 12 });
-      sprite.toEnd();
-    });
   }
 
   checkWinner() {
@@ -435,6 +456,7 @@ class GameL {
     document.querySelector('.container').setAttribute('data-show', 'false');
     document.querySelector('.play_with_bot').setAttribute('data-show', 'true');
     document.querySelector('.play_with_player').setAttribute('data-show', 'true');
+    gameP = null;
   }
 
   removeEvents() {
