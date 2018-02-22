@@ -467,7 +467,7 @@ class GameL {
     document.querySelector('.container').setAttribute('data-show', 'false');
     document.querySelector('.play_with_bot').setAttribute('data-show', 'true');
     document.querySelector('.play_with_player').setAttribute('data-show', 'true');
-    message.innerHTML = 'Place your ships';
+    message.innerHTML = 'Place your ships'
     gameP.destroy();
   }
 

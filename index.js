@@ -67,7 +67,7 @@ io.on('connection', function (socket) {
   socket.on('ready', function (matrix, params) {
     let game = games.find(x => x.gameID === params.selectedGame);
     if (!game) return;
-    game.namesInOrder.push(params.name);
+    game.namesInOrder.push(params.playerName);
     console.log('ready', game);
     if (game.namesInOrder.length === 2) {
       socket.emit('ready', game.namesInOrder[0]);

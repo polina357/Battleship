@@ -275,6 +275,7 @@ function removeEvents() {
   document.querySelector('.overlay').setAttribute('data-show', 'false');
 }
 
+///// you lost
 
 socket.on('show_all_games', function (games) {
   let allGames = tmpl("allgameselect", {
@@ -319,13 +320,20 @@ socket.on('start', function (gameID) {
       message.innerHTML = 'You play as a bot';
       document.querySelector('.star').setAttribute('data-show', 'true');
       let plMatrix = null;
-      if (game.player1.matrix.length) plMatrix = game.player1.matrix;
+      let ships = null;
+      if (game.player1.matrix && game.player1.matrix.length) {
+        plMatrix = game.player1.matrix;
+        ships = game.player1.myShips;
+      }
       game.player1 = new Bot({
         field: 'player1',
         size: game.size,
         type: 'Bot'
       });
-      if (plMatrix) game.player1.matrix = plMatrix;
+      if (plMatrix) {
+        game.player1.matrix = plMatrix;
+        game.player1.myShips = ships;
+      }
     }
   });
 });
