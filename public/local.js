@@ -6,7 +6,7 @@ let game;
 var gameP;
 
 function preload() {
-  gameP.load.spritesheet('kaboom', 'assets/explode.png', 35, 35);
+  gameP.load.spritesheet('kaboom', 'assets/explode.png', 35, 35, 13);
   gameP.load.audio('exp', 'assets/audio.wav');
 }
 
